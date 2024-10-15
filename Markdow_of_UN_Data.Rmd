@@ -1,0 +1,232 @@
+---
+title: "markdown_of_UN"
+output: html_document
+date: "2024-10-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+
+
+gapminder_1997 <- read_csv("gapminder_1997.csv")
+dim(gapminder_1997)
+head(gapminder_1997)
+```
+
+
+
+# -------------- Plot Number One -------------
+# Plot GDP per capita vs Life Expectancy 
+
+```{r}
+Life_exp_by_GDP <- 
+  
+  ggplot(data = gapminder_1997) +
+  aes(x = gdpPercap,
+      y = lifeExp,
+      color = continent,
+      size = pop/1000000) +
+  labs(x = "GDP Per Capita",
+       y = "Life Expectancy",
+       title = "Do people in wealthy countries live longer?", 
+       subtitle = "1997",
+       size = "Population (In Millions)") +
+  geom_point() +
+  scale_color_brewer(palette = "Set2") +
+  theme_bw()
+
+ggsave( filename = "gap_minder1997.pdf",
+        plot = Life_exp_by_GDP,
+        width =8, height = 5)
+```
+
+
+#----------- Doing this with all data ------------
+
+```{r}
+gapminder_all <- read_csv("gapminder_data.csv")
+dim(gapminder_1997)
+head(gapminder_1997)
+```
+
+
+```{r}
+Life_exp_by_GDP_all_data <- 
+  
+  ggplot(data = gapminder_all) +
+  aes(x = gdpPercap,
+      y = lifeExp,
+      color = continent,
+      size = pop/1000000) +
+  labs(x = "GDP Per Capita",
+       y = "Life Expectancy",
+       title = "Do people in wealthy countries live longer?", 
+       subtitle = "All years",
+       size = "Population (In Millions)") +
+  geom_point() +
+  scale_color_brewer(palette = "Set2") +
+  theme_bw()
+
+ggsave( filename = "gap_minder.all.pdf",
+        plot = Life_exp_by_GDP_all_data,
+        width =8, height = 5)
+```
+
+
+# ------------------- An even more involved set of plots ----------------
+
+```{r}
+gapminder_all <- read_csv("gapminder_data.csv")
+dim(gapminder_all)
+head(gapminder_all)
+
+Life_exp_by_year <- 
+  ggplot(data = gapminder_all) +
+  aes(x = year, 
+      y= lifeExp,
+      color = continent,
+      group = country) +
+  geom_line()
+
+Life_exp_by_year
+```
+
+
+# Discrete plots
+
+```{r}
+discrete_plot_1_1997 <- 
+  ggplot(data = gapminder_1997) +
+  aes(x = continent,
+      y = lifeExp) +
+  geom_violin() +
+  geom_jitter(aes(size = pop, color = continent), alpha = 0.5) 
+
+discrete_plot_1_1997
+```
+
+
+```{r}
+discrete_plot_2_all <- 
+  ggplot(data = gapminder_all) +
+  aes(x = continent,
+      y = lifeExp) +
+  geom_violin() +
+  geom_jitter(aes(size = pop, color = continent), alpha = 0.5) 
+
+discrete_plot_2_all
+```
+
+
+# Violin plot without the dots
+
+```{r}
+discrete_plot_2_all_no_dot <- 
+  ggplot(data = gapminder_all) +
+  aes(x = continent,
+      y = lifeExp) +
+  geom_violin() +
+  geom_violin(aes(fill = continent), alpha = 0.5)
+
+discrete_plot_2_all_no_dot
+```
+
+
+
+# Univariate Plot
+
+```{r}
+ggplot(data = gapminder_1997) +
+  aes(x = lifeExp) + 
+  geom_density(color = "blue")
+```
+
+
+# Multiple plots at once aka "Facet Wrapping"
+
+```{r}
+facet_wrap_1997 <- 
+  ggplot(data = gapminder_1997) +
+  aes(x = gdpPercap,
+      y = lifeExp,
+      color = continent,
+      size = pop/1000000) +
+  labs(x = "GDP Per Capita",
+       y = "Life Expectancy",
+       title = "Do people in wealthy countries live longer?", 
+       subtitle = "In the Year 1997",
+       size = "Population (In Millions)") +
+  geom_point() +
+  facet_wrap(vars(continent))
+
+facet_wrap_1997
+
+ggsave(filename = "facet_wrap_1997.pdf",
+       plot = facet_wrap_1997)
+```
+
+
+# ------------------------------------
+
+```{r}
+
+facet_grid_1997 <-
+  ggplot(data = gapminder_1997) +
+  aes(x = gdpPercap,
+      y = lifeExp) +
+  geom_point() +
+  facet_grid(vars(continent))
+
+facet_grid_1997
+```
+
+
+# ------------------ Even fancier plots --------------
+
+```{r}
+static_plot <- 
+  ggplot(data = gapminder_all) +
+  aes(x = gdpPercap,
+      y = lifeExp,
+      color = continent,
+      size = pop/1000000) +
+  labs(x = "GDP Per Capita",
+       y = "Life Expectancy",
+       title = "Do people in wealthy countries live longer?", 
+       subtitle = "Over the Years",
+       size = "Population (In Millions)") +
+  geom_point() +
+  scale_color_brewer(palette = "Set2") +
+  theme_bw()
+
+static_plot
+```
+
+# ------------------------------ facet wrap all
+
+```{r}
+facet_wrap_all <- 
+  ggplot(data = gapminder_all) +
+  aes(x = gdpPercap,
+      y = lifeExp,
+      color = continent,
+      size = pop/1000000) +
+  labs(x = "GDP Per Capita",
+       y = "Life Expectancy",
+       title = "Do people in wealthy countries live longer?", 
+       subtitle = "Over the Years by Continent",
+       size = "Population (In Millions)") +
+  geom_point() +
+  facet_wrap(vars(continent))
+
+facet_wrap_all
+
+ggsave(filename = "facet_wrap_all_data.pdf",
+       plot = facet_wrap_all)
+```

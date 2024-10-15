@@ -1,0 +1,269 @@
+---
+title: "Markdown_of_UN_Data_pt2"
+author: "Isaac"
+date: "2024-10-15"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+gapminder_data <- read_csv("gapminder_data.csv")
+
+summary(gapminder_data)
+```
+
+```{r}
+gapminder_data <- read_csv("gapminder_data.csv")
+
+summary(gapminder_data)
+
+gapminder_data %>%
+  summarize(averageLifeExp = mean(lifeExp))
+
+gapminder_data_summarized <- gapminder_data %>%
+  summarize(averageLifeExp=mean(lifeExp))
+
+gapminder_data_summarized
+
+gapminder_data
+```
+
+
+```{r}
+
+gapminder_data %>%  
+  summarize(recent_year = max(year))
+
+gapminder_2007 <- gapminder_data %>%
+  filter(year == 2007) %>%
+  summarize(average=mean(lifeExp))
+
+gapminder_data %>%
+  summarize(first_year=min(year))
+
+gapminder_data %>%
+  filter(year == 1952) %>%
+  summarize(average_gdp=mean(gdpPercap))
+
+gapminder_data %>%
+  group_by(year) %>%
+  summarize(average=mean(lifeExp))
+
+gapminder_data %>%
+  group_by(continent) %>%
+  summarize(average=mean(lifeExp))
+```
+
+
+
+# all the continents min, max and average life exp. for all of the years and 1952(oldest) 2007 (most recent)
+
+```{r}
+life_exp_by_continent <- gapminder_data %>%
+  group_by(continent) %>%
+  summarize(min=min(lifeExp), average=mean(lifeExp), max=max(lifeExp))
+
+life_exp_by_continent_1952 <- gapminder_data %>%
+  group_by(continent) %>%
+  filter(year == 1952) %>%
+  summarize(min=min(lifeExp), average=mean(lifeExp), max=max(lifeExp))
+
+life_exp_by_continent_2007 <- gapminder_data %>%
+  group_by(continent) %>%
+  filter(year == 2007) %>%
+  summarize(min=min(lifeExp), average=mean(lifeExp), max=max(lifeExp))
+```
+
+
+# finding the gdp
+
+```{r}
+total_gdp_by_country <- gapminder_data %>%
+  mutate(gdp = pop * gdpPercap)
+
+population_in_millions <- gapminder_data %>%
+  mutate(popInMillions = pop / 1000000)
+
+gapminder_data %>%
+  select(- pop, - gdpPercap)
+```
+
+
+# ------------------------------------------
+
+# filtering for only the Americas in the year 2007
+
+```{r}
+gapminder_data_2007_Americas <- read_csv("gapminder_data.csv") %>%
+  filter(year == 2007 & continent == "Americas") %>%
+  select(- year, - continent)
+```
+
+
+# ------------------------------------------
+
+# Adding in CO2 Emissions
+
+```{r}
+CO2_emissions <- read_csv("co2-un-data.csv", skip = 2,
+                          col_names= c("region", "country", "year", "series", "value", "footnotes", "source"))
+
+co2_emissions_dirty <- CO2_emissions %>%
+  select(country, year, series, value) 
+
+
+co2_emissions_dirty <- CO2_emissions %>%
+  select(country, year, series, value) %>%
+  mutate(series = recode(series, "Emissions (thousand metric tons of carbon dioxide)" = "total_emissions",
+                         "Emissions per capita (metric tons of carbon dioxide)" = "per_capita_emissions"))
+
+co2_emissions_dirty %>%
+  select(country, year, series, value) %>%
+  mutate(series = recode(series, "Emissions (thousand metric tons of carbon dioxide)" = "total",
+                         "Emissions per capita (metric tons of carbon dioxide)" = "per_capita")) %>%
+  pivot_wider(names_from=series, values_from=value) %>%
+  count(year)
+```
+
+# separating by year and emission per capital
+
+```{r}
+co2_emissions_dirty %>%
+  select(country, year, series, value) %>%
+  mutate(series = recode(series, "Emissions (thousand metric tons of carbon dioxide)" = "total",
+                         "Emissions per capita (metric tons of carbon dioxide)" = "per_capita")) %>%
+  pivot_wider(names_from=series, values_from=value) %>%
+  count(year)
+```
+
+
+# filtered for the year 2005
+
+```{r}
+co2_emissions_dirty %>%
+  select(country, year, series, value) %>%
+  mutate(series = recode(series, "Emissions (thousand metric tons of carbon dioxide)" = "total",
+                         "Emissions per capita (metric tons of carbon dioxide)" = "per_capita")) %>%
+  pivot_wider(names_from=series, values_from=value) %>%
+  filter(year == 2005) %>%
+  count(year)
+```
+
+
+# assigning variable
+
+```{r}
+CO2_emmissions_2.0 <- 
+  co2_emissions_dirty %>%
+  select(country, year, series, value) %>%
+  mutate(series = recode(series, "Emissions (thousand metric tons of carbon dioxide)" = "total",
+                         "Emissions per capita (metric tons of carbon dioxide)" = "per_capita")) %>%
+  pivot_wider(names_from=series, values_from=value) %>%
+  count(year)
+```
+
+#------------------------------
+
+# merging data frames
+
+```{r}
+CO2_emissions <- read_csv("co2-un-data.csv", skip=2,
+                          col_names=c("region", "country", "year",
+                                      "series", "value", "footnotes", "source")) %>%
+  select(country, year, series, value) %>%
+  mutate(series = recode(series, "Emissions (thousand metric tons of carbon dioxide)" = "total",
+                         "Emissions per capita (metric tons of carbon dioxide)" = "per_capita")) %>%
+  pivot_wider(names_from=series, values_from=value) %>%
+  filter(year==2005) %>%
+  select(-year) %>%
+  mutate(country=recode(country,
+                        "Bolivia (Plurin. State of)" = "Bolivia",
+                        "United States of America" = "United States",
+                        "Venezuela (Boliv. Rep. of)" = "Venezuela")
+  )
+
+anti_join(gapminder_data, CO2_emissions, by="country")
+
+gapminder_data <- read_csv("gapminder_data.csv") %>%
+  filter(year == 2007 & continent == "Americas") %>%
+  select(-year, -continent) %>%
+  mutate(country = recode(country, "Puerto Rico" = "United States")) %>%
+  group_by(country) %>%
+  summarize(lifeExp = sum(lifeExp * pop)/sum(pop),
+            gdpPercap = sum(gdpPercap * pop)/sum(pop),
+            pop = sum(pop)
+  )
+
+anti_join(gapminder_data, CO2_emissions, by="country")
+
+gapminder_CO2 <- inner_join(gapminder_data, CO2_emissions, by="country")
+
+gapminder_CO2 %>%  
+  mutate(region = if_else(country == "Canada" | country == "United States" | country == "Mexico", "north", "south"))  
+
+gapminder_and_CO2 <- gapminder_CO2 %>%  
+  mutate(region = if_else(country == "Canada" | country == "United States" | country == "Mexico", "north", "south"))  
+```
+
+
+#-----------------------
+
+# plotting my data
+
+```{r}
+ggplot(gapminder_and_CO2, aes(x=gdpPercap, y=per_capita)) +
+  geom_point() +
+  labs(x="GDP (per capita)",
+       y="CO2 emitted (per capita)",
+       title="There is a strong association between a nation's GDP \nand the amount of CO2 it produces"
+  ) +
+  geom_smooth(method =lm)
+
+
+gapminder_and_CO2 %>%
+  mutate(region = if_else(country == "Canada" | 
+                            country == "United States" | 
+                            country == "Mexico", 
+                          "north", "south"))
+
+gapminder_and_CO2 %>%
+  mutate(region = if_else(country == "Canada" |
+                            country == "United States" |
+                            country == "Mexico", "north", "south")) %>%
+  group_by(region) %>%
+  summarize(sumtotal = sum(total),
+            sumpop = sum(pop))
+```
+
+
+ggplot(gapminder_and_CO2, aes(x=gdpPercap, y=per_capita)) +
+  geom_point() +
+  labs(x="GDP (per capita)",
+       y="CO2 emitted (per capita)",
+       title="There is a strong association between a nation's GDP \nand the amount of CO2 it produces"
+  ) +
+  geom_smooth(method =lm)
+
+
+gapminder_and_CO2 %>%
+  mutate(region = if_else(country == "Canada" | 
+                            country == "United States" | 
+                            country == "Mexico", 
+                          "north", "south"))
+
+gapminder_and_CO2 %>%
+  mutate(region = if_else(country == "Canada" |
+                            country == "United States" |
+                            country == "Mexico", "north", "south")) %>%
+  group_by(region) %>%
+  summarize(sumtotal = sum(total),
+            sumpop = sum(pop))
