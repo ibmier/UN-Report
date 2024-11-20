@@ -1,0 +1,204 @@
+---
+title: "Creative pRoject"
+author: "Isaac"
+date: "2024-11-09"
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+---
+
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+
+```
+
+
+```{r}
+gapminder_data <- read.csv("gapminder_data.csv")
+
+```
+
+
+
+```{r}
+
+gapminder_data <- read.csv("gapminder_data.csv")
+
+summary(gapminder_data)
+
+gapminder_data %>%
+  summarize(averageLifeExp = mean(lifeExp))
+
+gapminder_data_summarized <- gapminder_data %>%
+  summarize(averageLifeExp=mean(lifeExp))
+
+gapminder_data_summarized
+```
+
+
+
+```{r}
+total_gdp_by_country <- gapminder_data %>%
+  mutate(gdp = pop * gdpPercap)
+
+population_in_millions <- gapminder_data %>%
+  mutate(popInMillions = pop / 1000000)
+
+gapminder_data %>%
+  filter(year == 2007 & continent == "Americas") %>%
+  select(- year, - continent)
+
+gapminder_data_2007_Americas <- gapminder_data %>%
+  filter(year == 2007 & continent == "Americas") %>%
+  select(- year, - continent)
+
+mean_lifeExp <- mean(gapminder_data_2007_Americas$lifeExp)
+
+```
+
+
+```{r}
+
+life_exp_in_Americas <- ggplot(gapminder_data_2007_Americas, aes(x = reorder(country, lifeExp))) +
+  geom_col(aes(y = lifeExp, fill = "Life Expectancy"), color = "darkblue") +
+  geom_col(aes(y = gdpPercap / 1000, fill = "GDP per Capita"), color = "red", alpha = 0.7) +
+    geom_hline(yintercept = mean_lifeExp, linetype = "dashed", color = "black", size = 1) +
+  scale_y_continuous(
+    name = "Life Expectancy (Years)",
+    sec.axis = sec_axis(~.*1000, name = "GDP per Capita (USD)")
+  ) +
+  labs(
+    x = "Country",
+    title = "Comparison of Life Expectancy and GDP per Capita in the Americas"
+  ) +
+  scale_fill_manual(values = c("Life Expectancy" = "lightblue", "GDP per Capita" = "pink")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), plot.title = element_text(hjust = 0.5))
+
+print(life_exp_in_Americas)
+
+
+```
+
+
+```{r}
+gapminder_all <- read_csv("gapminder_data.csv")
+```
+
+```{r}
+
+facet_wrap_all <- 
+  ggplot(data = gapminder_all) +
+  aes(x = gdpPercap,
+      y = lifeExp,
+      color = continent,
+      size = pop/1000000) +
+  labs(x = "GDP Per Capita",
+       y = "Life Expectancy",
+       title = "Do people in wealthy countries live longer?", 
+       subtitle = "1952 - 2007 by Continent",
+       size = "Population (In Millions)") +
+  geom_point() +
+  facet_wrap(vars(continent))
+
+facet_wrap_all
+
+ggsave(filename = "facet_wrap_all_data.pdf",
+       plot = facet_wrap_all)
+
+```
+
+
+```{r}
+
+CO2_emissions <- read_csv("co2-un-data.csv", skip=2,
+                          col_names=c("region", "country", "year",
+                                      "series", "value", "footnotes", "source")) %>%
+  select(country, year, series, value) %>%
+  mutate(series = recode(series, "Emissions (thousand metric tons of carbon dioxide)" = "total",
+                         "Emissions per capita (metric tons of carbon dioxide)" = "per_capita")) %>%
+  pivot_wider(names_from=series, values_from=value) %>%
+  filter(year==2005) %>%
+  select(-year) %>%
+  mutate(country=recode(country,
+                        "Bolivia (Plurin. State of)" = "Bolivia",
+                        "United States of America" = "United States",
+                        "Venezuela (Boliv. Rep. of)" = "Venezuela")
+  )
+
+anti_join(gapminder_data, CO2_emissions, by="country")
+
+gapminder_data <- read_csv("gapminder_data.csv") %>%
+  filter(year == 2007 & continent == "Americas") %>%
+  select(-year, -continent) %>%
+  mutate(country = recode(country, "Puerto Rico" = "United States")) %>%
+  group_by(country) %>%
+  summarize(lifeExp = sum(lifeExp * pop)/sum(pop),
+            gdpPercap = sum(gdpPercap * pop)/sum(pop),
+            pop = sum(pop)
+  )
+
+anti_join(gapminder_data, CO2_emissions, by="country")
+
+gapminder_CO2 <- inner_join(gapminder_data, CO2_emissions, by="country")
+
+gapminder_CO2 %>%  
+  mutate(region = if_else(country == "Canada" | country == "United States" | country == "Mexico", "north", "south"))  
+
+gapminder_and_CO2 <- gapminder_CO2 %>%  
+  mutate(region = if_else(country == "Canada" | country == "United States" | country == "Mexico", "north", "south"))  
+
+```
+
+
+```{r}
+
+ggplot(gapminder_and_CO2, aes(x=gdpPercap, y=per_capita)) +
+  geom_point() +
+  labs(x="GDP (per capita)",
+       y="CO2 emitted (per capita)",
+       title="There is a strong association between a nation's GDP \nand the amount of CO2 it produces"
+  ) +
+  geom_smooth(method =lm)
+
+
+gapminder_and_CO2 %>%
+  mutate(region = if_else(country == "Canada" | 
+                            country == "United States" | 
+                            country == "Mexico", 
+                          "north", "south"))
+
+gapminder_and_CO2 %>%
+  mutate(region = if_else(country == "Canada" |
+                            country == "United States" |
+                            country == "Mexico", "north", "south")) %>%
+  group_by(region) %>%
+  summarize(sumtotal = sum(total),
+            sumpop = sum(pop))
+
+```
+
+
+```{r}
+life_exp_in_Americas <- ggplot(gapminder_data_2007_Americas, aes(x = reorder(country, lifeExp))) +
+  geom_point(aes(y = lifeExp, fill = "Life Expectancy"), color = "darkblue") +
+  geom_point(aes(y = gdpPercap / 1000, fill = "GDP per Capita"), color = "red", alpha = 0.7) +
+    geom_hline(yintercept = mean_lifeExp, linetype = "dashed", color = "black", size = 1) +
+  scale_y_continuous(
+    name = "Life Expectancy (Years)",
+    sec.axis = sec_axis(~.*1000, name = "GDP per Capita (USD)")
+  ) +
+  labs(
+    x = "Country",
+    title = "Comparison of Life Expectancy and GDP per Capita in the Americas"
+  ) +
+  scale_fill_manual(values = c("Life Expectancy" = "lightblue", "GDP per Capita" = "pink")) +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1), plot.title = element_text(hjust = 0.5))
+
+print(life_exp_in_Americas)
+```
+
